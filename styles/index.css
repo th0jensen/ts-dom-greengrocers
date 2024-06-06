@@ -12,6 +12,7 @@ h2 {
 /* Buttons */
 
 button {
+    margin: 10px;
     padding: 0.25rem 0.5rem;
 
     text-transform: uppercase;
@@ -170,4 +171,17 @@ button {
         border-top: 2px solid #00675b;
         border-bottom: 2px solid #00675b;
     }
+}
+
+/* Admin Screen */
+
+#add-new-item {
+    display: grid;
+    grid-auto-flow: row;
+    row-gap: 10px;
+}
+
+#submit {
+    margin-top: 10px;
+    padding: 5px;
 }
