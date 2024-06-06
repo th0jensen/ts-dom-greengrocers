@@ -1,6 +1,6 @@
 import { StoreItem, CartItem, state } from './state'
 
-function createItemImage(item: StoreItem) {
+function createItemImage(item: StoreItem): HTMLDivElement {
     const itemIconContainer = document.createElement('div')
 
     const itemIcon = document.createElement('img')
@@ -12,7 +12,7 @@ function createItemImage(item: StoreItem) {
 }
 
 // TODO (#3): Add items to cart
-function createAddToCartButton(item: StoreItem) {
+function createAddToCartButton(item: StoreItem): HTMLButtonElement {
     const addToCartButton = document.createElement('button')
     addToCartButton.innerText = 'Add to cart'
 
@@ -39,7 +39,7 @@ function createAddToCartButton(item: StoreItem) {
 }
 
 // TODO (#5): Add logic to incremental buttons
-function addButton(cart: CartItem) {
+function addButton(cart: CartItem): HTMLButtonElement {
     const addButton = document.createElement('button')
     addButton.setAttribute('class', 'quantity-btn add-btn center')
     addButton.addEventListener('click', () => {
@@ -50,7 +50,7 @@ function addButton(cart: CartItem) {
     return addButton
 }
 
-function removeButton(cart: CartItem) {
+function removeButton(cart: CartItem): HTMLButtonElement {
     const removeButton = document.createElement('button')
     removeButton.setAttribute('class', 'quantity-btn remove-btn center')
 
@@ -59,7 +59,12 @@ function removeButton(cart: CartItem) {
             cart.quantity -= 1
             console.log(`INFO: ${cart.name} quantity decreased by one`)
         } else {
-            state.cart.splice(state.cart.indexOf(cart), 1)
+            for (let i = 0; i < state.cart.length; i++) {
+                if (state.cart[i].name === cart.name) {
+                    state.cart.splice(i, 1)
+                    break
+                }
+            }
             console.log(`INFO: ${cart.name} removed from cart`)
         }
 
@@ -70,7 +75,7 @@ function removeButton(cart: CartItem) {
 }
 
 // TODO (#6): Do the maths for the cart
-function calculateTotalAmount() {
+function calculateTotalAmount(): string {
     let totalAmount = 0
 
     for (let i = 0; i < state.cart.length; i++) {
@@ -83,11 +88,15 @@ function calculateTotalAmount() {
 }
 
 // TODO (#4): Render the cart
-function renderCart() {
+function renderCart(): void {
     const cartItemList = document.querySelector('.cart--item-list')
+    const totalAmount = document.querySelector('.total-number')
 
-    if (!cartItemList) {
-        console.error('ERROR: No cart--item-list class found in DOM')
+    if (!cartItemList || !totalAmount) {
+        console.error(
+            'ERROR: No cart--item-list or total-number class found in DOM',
+            Error
+        )
         return
     }
 
@@ -115,37 +124,94 @@ function renderCart() {
         cartItemList.appendChild(cartItem)
     }
 
-    const totalAmount = document.querySelector('.total-number')
-
-    if (!totalAmount) {
-        console.error('ERROR: No total-number class found in DOM')
-        return
-    }
     totalAmount.innerHTML = `£${calculateTotalAmount()}`
 }
 
-// TODO (#1): Render the initial state
-function render() {
-    const storeItemList = document.querySelector('.store--item-list')
+function createFilter(list: Element): HTMLDivElement {
+    const filterContainer = document.createElement('div')
+    const filterButton = document.createElement('button')
+    filterButton.innerText = `${state.filter} filter`
+    filterButton.addEventListener('click', () => {
+        switch (state.filter) {
+            case 'Fruit':
+                state.filter = 'Berry'
+                break
+            case 'Berry':
+                state.filter = 'Vegetable'
+                break
+            case 'Vegetable':
+                state.filter = null
+                break
+            default:
+                state.filter = 'Fruit'
+        }
+        filterButton.innerText = `${state.filter} filter`
+        render(list)
+    })
 
-    if (!storeItemList) {
-        console.error('ERROR: No store--item-list class found in DOM')
-        return
+    const sortButton = document.createElement('button')
+    sortButton.innerText = 'Sorting by ID'
+    sortButton.addEventListener('click', () => {
+        if (!state.sorted) {
+            state.sorted = true
+            sortButton.innerText = 'Sorting by name'
+        } else {
+            state.sorted = false
+            sortButton.innerText = 'Sorting by ID'
+        }
+        render(list)
+    })
+
+    filterContainer.appendChild(filterButton)
+    filterContainer.appendChild(sortButton)
+    return filterContainer
+}
+
+// TODO (#1): Render the initial state
+function render(list: Element): void {
+    let filteredItems = state.items
+
+    if (state.filter != null) {
+        filteredItems = state.items.filter((item) => item.kind === state.filter)
     }
 
-    storeItemList.innerHTML = ''
+    if (state.sorted) {
+        filteredItems = filteredItems.sort((a, b) =>
+            a.name.localeCompare(b.name)
+        )
+    } else if (!state.sorted) {
+        filteredItems = filteredItems.sort((a, b) => a.id.localeCompare(b.id))
+    }
 
-    for (let i = 0; i < state.items.length; i++) {
-        const item = state.items[i]
+    list.innerHTML = ''
+
+    for (let i = 0; i < filteredItems.length; i++) {
+        const item = filteredItems[i]
         const listItem = document.createElement('li')
+
+        const nameAndPrice = document.createElement('p')
+        nameAndPrice.innerText = `
+            ${item.name[0].toUpperCase() + item.name.slice(1)}
+            £${item.price}
+        `
         listItem.appendChild(createItemImage(item))
+        listItem.appendChild(nameAndPrice)
         listItem.appendChild(createAddToCartButton(item))
-        storeItemList.appendChild(listItem)
+        list.appendChild(listItem)
     }
 }
 
 // TODO (#2): Load the initial state
-document.addEventListener('DOMContentLoaded', () => {
-    render()
+document.addEventListener('DOMContentLoaded', function () {
+    const storeItemList = document.querySelector('.store--item-list')
+    const title = document.querySelector('h1')
+
+    if (!storeItemList || !title) {
+        console.error('No store--item-list or header class found in DOM', Error)
+        return
+    }
+
+    title.appendChild(createFilter(storeItemList))
+    render(storeItemList)
     renderCart()
 })
